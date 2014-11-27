@@ -26,6 +26,7 @@ import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
 
 import com.amazonaws.services.s3.model.ObjectMetadata;
+import com.fasterxml.jackson.core.JsonParseException;
 import com.google.gson.Gson;
 
 /**
@@ -63,13 +64,18 @@ public class process extends HttpServlet {
         	String sentiment = getSentiment(tweetRequest.getText());
         	SentimentResult sentimentResult = gson.fromJson(sentiment, SentimentResult.class);
         	if (sentimentResult.status.equals("OK")) {
-        		getRds().update(tweetRequest.getId_str(), sentimentResult.score);
+        		System.out.println(tweetRequest.getText());
+        		System.out.println(sentiment);
+        		System.out.println(sentimentResult.docSentiment.score);
+        		getRds().update(tweetRequest.getId_str(), sentimentResult.docSentiment.score);
         		response.setStatus(200);
-        		
         	} else {
         		response.setStatus(500);
         	} 	
         	
+        } catch (JsonParseException e) {
+        	response.setStatus(200);
+        	System.err.println("Error in parsing json string.");
         } catch (RuntimeException exception) {
             
             // Signal to beanstalk that something went wrong while processing
