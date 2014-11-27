@@ -13,6 +13,7 @@ public class TweetRequest {
     private String user;
     private double longitude;
     private double latitude;
+    private double sentiment;
     
     public static TweetRequest fromJson(final InputStream json) 
             throws IOException {
@@ -70,7 +71,15 @@ public class TweetRequest {
 
     
     
-    public String toJson() throws IOException {
+    public double getSentiment() {
+		return sentiment;
+	}
+
+	public void setSentiment(double sentiment) {
+		this.sentiment = sentiment;
+	}
+
+	public String toJson() throws IOException {
         return MAPPER.writeValueAsString(this);
     }
     

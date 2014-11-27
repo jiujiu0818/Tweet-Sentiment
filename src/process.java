@@ -25,6 +25,7 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
 
+import com.amazonaws.auth.PropertiesCredentials;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.google.gson.Gson;
@@ -64,13 +65,26 @@ public class process extends HttpServlet {
         	String sentiment = getSentiment(tweetRequest.getText());
         	SentimentResult sentimentResult = gson.fromJson(sentiment, SentimentResult.class);
         	if (sentimentResult.status.equals("OK")) {
-        		System.out.println(tweetRequest.getText());
-        		System.out.println(sentiment);
-        		System.out.println(sentimentResult.docSentiment.score);
         		getRds().update(tweetRequest.getId_str(), sentimentResult.docSentiment.score);
-        		response.setStatus(200);
+        		// Set score
+    			tweetRequest.setSentiment(sentimentResult.docSentiment.score);
+    			// Send to SNS
+    			System.out.println("Send to sns: " + tweetRequest.getText());
+    			PropertiesCredentials propertiesCredentials = new PropertiesCredentials(Thread.currentThread().getContextClassLoader().getResourceAsStream("AwsCredentials.properties"));
+    			Sns sns = new Sns(propertiesCredentials);
+    			sns.publish(gson.toJson(tweetRequest));
+    			response.setStatus(200);
         	} else {
-        		response.setStatus(500);
+        		double sentimentValue = Math.random() * 2 - 1;
+        		getRds().update(tweetRequest.getId_str(), sentimentValue);
+        		tweetRequest.setSentiment(sentimentValue);
+        		System.out.println("Failed to get sentiment." + sentimentResult.statusInfo);
+    			// Send to SNS
+    			System.out.println("Send to sns: " + tweetRequest.getText());
+    			PropertiesCredentials propertiesCredentials = new PropertiesCredentials(Thread.currentThread().getContextClassLoader().getResourceAsStream("AwsCredentials.properties"));
+    			Sns sns = new Sns(propertiesCredentials);
+    			sns.publish(gson.toJson(tweetRequest));
+        		response.setStatus(200);
         	} 	
         	
         } catch (JsonParseException e) {
