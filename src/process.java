@@ -63,21 +63,13 @@ public class process extends HttpServlet {
         	String sentiment = getSentiment(tweetRequest.getText());
         	SentimentResult sentimentResult = gson.fromJson(sentiment, SentimentResult.class);
         	if (sentimentResult.status.equals("OK")) {
+        		getRds().update(tweetRequest.getId_str(), sentimentResult.score);
         		response.setStatus(200);
         		
         	} else {
         		response.setStatus(500);
-        	}
+        	} 	
         	
-        	
-        	
-        	
-        	
-            
-            // Signal to beanstalk that processing was successful so this work
-            // item should not be retried.
-            
-
         } catch (RuntimeException exception) {
             
             // Signal to beanstalk that something went wrong while processing
@@ -134,6 +126,13 @@ public class process extends HttpServlet {
         String pass = null;
         pass = new Scanner(password).next();
         return pass;
+	}
+	
+	private Rds getRds() {
+		Rds rds = Rds.getInstance();
+		if (!rds.isPasswordSet())
+			rds.setPassword(readPass());
+		return rds;
 	}
 
 }
