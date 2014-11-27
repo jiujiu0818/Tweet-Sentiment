@@ -26,12 +26,14 @@ import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
 
 import com.amazonaws.services.s3.model.ObjectMetadata;
+import com.google.gson.Gson;
 
 /**
  * Servlet implementation class process
  */
 public class process extends HttpServlet {
 	private static final long serialVersionUID = 1L;
+	private static Gson gson = new Gson();
        
     /**
      * @see HttpServlet#HttpServlet()
@@ -58,7 +60,14 @@ public class process extends HttpServlet {
             // Parse the work to be done from the POST request body.
         	TweetRequest tweetRequest = TweetRequest.fromJson(request.getInputStream());
 
-        	System.out.println(getSentiment(tweetRequest.getText()));
+        	String sentiment = getSentiment(tweetRequest.getText());
+        	SentimentResult sentimentResult = gson.fromJson(sentiment, SentimentResult.class);
+        	if (sentimentResult.status.equals("OK")) {
+        		response.setStatus(200);
+        		
+        	} else {
+        		response.setStatus(500);
+        	}
         	
         	
         	
@@ -67,7 +76,7 @@ public class process extends HttpServlet {
             
             // Signal to beanstalk that processing was successful so this work
             // item should not be retried.
-            response.setStatus(200);
+            
 
         } catch (RuntimeException exception) {
             
@@ -115,6 +124,13 @@ public class process extends HttpServlet {
 	
 	private String getApiKey() {
 		InputStream password = Thread.currentThread().getContextClassLoader().getResourceAsStream("api_key.ini");
+        String pass = null;
+        pass = new Scanner(password).next();
+        return pass;
+	}
+	
+	private String readPass() {
+		InputStream password = Thread.currentThread().getContextClassLoader().getResourceAsStream("pass.ini");
         String pass = null;
         pass = new Scanner(password).next();
         return pass;
